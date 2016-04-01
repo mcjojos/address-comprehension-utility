@@ -477,9 +477,16 @@ public class Database {
 
     public final void shutdown() {
         try {
+            // although not strictly required because we are shutting down the derby system
+            // by specifying the shutdown=true attribute in the connection URL
+            // it's a good practice in general as specified here
+            // https://db.apache.org/derby/docs/10.9/devguide/tdevdvlp40464.html
+            dbConnection.close();
+            
             Connection connection = DriverManager.getConnection(dbShutDownURL);
             log.error("Could get a connection to the database even though the statement should have closed it");
             close(connection);
+
         } catch (SQLException e) {
             if (!checkIfDBShutdownProperly(e)) {
                 log.error("Couldn't shut down DB", e);
