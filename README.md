@@ -28,30 +28,23 @@ The tool is built on Java 8. You'll also need maven to build it.
 ## Properties
 
 A short explanation regarding the properties
-name | is optional | default value | example
---- | --- | --- | --- | ---|
-logsDir | yes | . | logDir
-mail.smtp.host | yes | smtp.gmail.com | smtp.gmail.com
-mail.smtp.port | yes | 587 | 587
-mail.subject | yes | Address Discovery | Address Discovery [testing]
-mail.to | no | | recipient@gmail.com
-mail.user | no | | some_gmail@gmail.com
-mail.pass | no | | some_password123
-engine.threads | yes | <= vm.availableProcessors | 2
-db.name | no | | AppDB
-run.time | yes | now() | 23:57 or 23:57:34
-run.period_seconds | yes | 86400 (1 day) | 3600
-download.directory | yes | . | download
-companies | no |  | company1, company2, company3, company4
-companies.company1.name | yes | | company name GmbH
-companies.company1.url | no | | http://www.company.de/impressum/
-companies.company1.parsers | no | com.jojos.home.addresscomprehension.parse.DefaultParser | com.jojos.home.addresscomprehension.parse.MockParser, com.jojos.home.addresscomprehension.parse.DefaultParser
-companies.company1.retain_download_data | yes | false | true
-
-
-## a comma-separated list of company aliases to be used further down.
-companies=company1, company2, company3, company4
-
+* logsDir - Directory where the logs shall be written. Default to LOGS
+* mail.smtp.host - The smtp host. Default is smtp.gmail.com
+* mail.smtp.port - The smtp port. Default is 587
+* mail.subject - The subject of the email report. Default is Address Discovery
+* mail.to - The email recipien TODO: make it a comma separated of email addresses
+* mail.user - Your email username
+* mail.pass - Your email password
+* engine.threads - number of threads used only for downloading and parsing. The rest of application will still run on the main thread. If that number is greater than the available processors then the latter shall be used.
+* db.name - Name of the db
+* run.time - Optional run time that can take one of the two formats: HH:mm:ss or HH:mm. Comment it if you want the tool to start downloading/parsing now.
+* run.period_seconds - The period between successive executions in seconds. if omitted the default is one day or 24*60*60 = 86400 seconds
+* download.directory - The optional download directory. If not defined the current dir is used
+* companies - Comma-separated list of company aliases to be used as part of the next properties
+* companies.company1.name - Defines an optional name for a specific alias. The alias must be defined in the 'companies' property
+* companies.company1.url - Mandatory URL to be used for downloading and extracting the address(es)
+* companies.company1.parsers - Comma separated list of parsers defined with their fully qualified class names. The com.jojos.home.addresscomprehension.parse.DefaultParser will always be used as a fallback if everything else fails. You might defined it although it doesn't make any difference if you don't
+* companies.company1.retain_download_data - Optional boolean property that retains the files downloaded for each company alias. Default value is false (delete download file after done parsing it).
 
 ## License
 
