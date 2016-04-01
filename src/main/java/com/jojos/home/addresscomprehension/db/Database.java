@@ -23,11 +23,9 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * All the database related operations go here
@@ -44,7 +42,7 @@ public class Database {
 
     private final Map<Integer, Company> cachedCompanies = new HashMap<>();
 
-    public Database(String dbName) throws ApplicationException, SQLException, MalformedURLException {
+    public Database(String dbName) throws SQLException, MalformedURLException {
         this.dbName = dbName;
         String connectionURL = DERBY_URL_PREFIX + dbName + ";create=true";
 
@@ -93,7 +91,7 @@ public class Database {
                 statement.setInt(3, company.getAddressCount());
                 statement.execute();
 
-                log.info("Inserting company {}", company.toString());
+                log.info("Inserting {}", company.toString());
                 // fetch the auto-increment value we just created
                 try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
                     if (generatedKeys.next()) {

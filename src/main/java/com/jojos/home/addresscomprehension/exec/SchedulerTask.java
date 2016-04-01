@@ -25,7 +25,6 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * A runnable class representing the elements of execution.
@@ -68,22 +67,26 @@ public class SchedulerTask implements Runnable {
                 List<Parser> registeredParsers = company.getRegisteredParsers();
 
                 for (Parser parser : registeredParsers) {
-                    Set<Address> addresses = parser.extractAddressesFromString(downloadResult.getContent(), company, Optional.empty());
+                    try {
+                        List<Address> addresses = parser.extractAddressesFromFile(downloaderCtx.getDownloadFile(), company, Optional.empty());
 
-                    if (addresses != null && !addresses.isEmpty()) {
-                        try {
-                            // the underlying code will make sure that we make an update only if it's necessary
-                            database.insertCompanies(Collections.singleton(company));
+                        if (addresses != null && !addresses.isEmpty()) {
+                            try {
+                                // the underlying code will make sure that we make an update only if it's necessary
+                                database.insertCompanies(Collections.singleton(company));
 
-                            // insert the addresses
-                            database.insertAddresses(addresses);
+                                // insert the addresses
+                                database.insertAddresses(addresses);
 
-                            email.dispatch(addresses);
-                        } catch (SQLException | ApplicationException | MalformedURLException e) {
-                            log.error("Cannot save {} in the database.", Util.toString(addresses, Address::toString));
-                            e.printStackTrace();
+                                email.dispatch(addresses);
+                            } catch (SQLException | ApplicationException | MalformedURLException e) {
+                                log.error("Cannot save {} in the database.", Util.toString(addresses, Address::toString));
+                                e.printStackTrace();
+                            }
+
                         }
-
+                    } catch (IOException e) {
+                        log.error("Error while extracting address from file {}", downloaderCtx.getDownloadFile());
                     }
                 }
 
@@ -97,6 +100,5 @@ public class SchedulerTask implements Runnable {
                 downloaderCtx.cleanUp();
             }
         }
-        log.info("running in the task scheduler!");
     }
 }

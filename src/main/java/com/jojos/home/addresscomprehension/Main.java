@@ -42,7 +42,8 @@ public class Main {
         this.commandLineArguments = commandLineArguments;
     }
 
-    private void start() throws FileNotFoundException, SQLException, ApplicationException, MalformedURLException {
+    private void start() throws
+            FileNotFoundException, SQLException, ApplicationException, MalformedURLException {
         loadConfigOrThrow();
 
         Optional<String> logDir = getOptionalProperty("logsDir");
@@ -59,6 +60,11 @@ public class Main {
 
         final long applicationStart = System.currentTimeMillis();
         log.info("starting application");
+
+//        System.setProperty("file.encoding","UTF-8");
+//        Field charset = Charset.class.getDeclaredField("defaultCharset");
+//        charset.setAccessible(true);
+//        charset.set(null, null);
 
         // instantiate the database
         String dbName = getProperty("db.name");
@@ -128,7 +134,7 @@ public class Main {
                 log.warn("Unparsable property for engine.threads: {}", optionalEngineThreads.get());
             }
         }
-        log.info("Using {} threads", maxEngineThreads);
+        log.info("Using {} threads for the download and parsing dispatchers", maxEngineThreads);
         return maxEngineThreads;
     }
 
@@ -292,7 +298,8 @@ public class Main {
     }
 
     public static void main(String[] args)
-            throws FileNotFoundException, SQLException, ApplicationException, MalformedURLException {
+            throws FileNotFoundException, SQLException, ApplicationException, MalformedURLException,
+            NoSuchFieldException, IllegalAccessException {
         Main main = new Main(args);
         main.start();
     }

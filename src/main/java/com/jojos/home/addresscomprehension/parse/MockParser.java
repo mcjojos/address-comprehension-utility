@@ -8,9 +8,9 @@ import com.jojos.home.addresscomprehension.values.Address;
 import com.jojos.home.addresscomprehension.values.Company;
 
 import java.io.File;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * A mock parser that never returns anything. Always returning an empty collection
@@ -20,14 +20,14 @@ import java.util.Set;
 public class MockParser implements Parser {
 
     @Override
-    public Set<Address> extractAddressesFromString(String page, Company company, Optional<ParserCtx> parserCtx) {
-        // Always return an empty set
-        return new HashSet<>();
+    public List<Address> extractAddressesFromString(String page, Company company, Optional<ParserCtx> parserCtx) {
+        // Always return an empty list
+        return new ArrayList<>();
     }
 
     @Override
-    public Set<Address> extractAddressesFromFile(File file, Company company, Optional<ParserCtx> parserCtx) {
+    public List<Address> extractAddressesFromFile(File file, Company company, Optional<ParserCtx> parserCtx) {
         // Never return a null.
-        return new HashSet<>();
+        return new ArrayList<>();
     }
 }

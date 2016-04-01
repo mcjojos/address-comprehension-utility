@@ -17,10 +17,9 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * Test class for {@link Parser}'s default implementation {@link DefaultParser}.
@@ -43,8 +42,9 @@ public class DefaultParserTest {
         Company company = new Company("http://www.idealo.de/preisvergleich/AGB.html", Optional.of("idealo"), false);
 
         String addressSingleLine = "Ritterstraße 11 10969 Berlin, Deutschland";
-        Set<Address> addresses = parser.extractAddressesFromString(addressSingleLine, company, Optional.<ParserCtx>empty());
-        Assert.assertTrue("Single lined address should be one", addresses.size() == 1);
+        List<Address> addresses = parser.extractAddressesFromString(addressSingleLine, company, Optional.<ParserCtx>empty());
+        Assert.assertEquals(1, addresses.size());
+        Assert.assertEquals("Ritterstraße 11 10969 Berlin, Deutschland", addresses.get(0).getValue());
     }
 
     @Test
@@ -56,8 +56,9 @@ public class DefaultParserTest {
 
         String addressMultipleLines = "Ritterstraße 11<br>\n" +
                 "10969 Berlin, Deutschland";
-        Set<Address> addresses = parser.extractAddressesFromString(addressMultipleLines, company, Optional.<ParserCtx>empty());
-        Assert.assertTrue("Multiple lined address should be one", addresses.size() == 1);
+        List<Address> addresses = parser.extractAddressesFromString(addressMultipleLines, company, Optional.<ParserCtx>empty());
+        Assert.assertEquals(1, addresses.size());
+        Assert.assertEquals("Ritterstraße 11  10969 Berlin, Deutschland", addresses.get(0).getValue());
     }
 
     @Test
@@ -80,8 +81,9 @@ public class DefaultParserTest {
 
         Company company = new Company(companyUrl, Optional.of("idealo"), false);
 
-        Set<Address> addresses = parser.extractAddressesFromFile(downloadCtx.getDownloadFile(), company, Optional.<ParserCtx>empty());
-        Assert.assertTrue("Address extracted from html content should be only one", addresses.size() == 1);
+        List<Address> addresses = parser.extractAddressesFromFile(downloadCtx.getDownloadFile(), company, Optional.<ParserCtx>empty());
+        Assert.assertEquals(1, addresses.size());
+        Assert.assertEquals("Ritterstraße 11 10969 Berlin, Deutschland", addresses.get(0).getValue());
 
         downloadCtx.cleanUp();
         Assert.assertTrue("File exists", !downloadCtx.getDownloadFile().exists());
@@ -107,9 +109,9 @@ public class DefaultParserTest {
 
         Company company = new Company(companyUrl, Optional.of("Regis 24"), false);
 
-        Set<Address> addresses = parser.extractAddressesFromFile(downloadCtx.getDownloadFile(), company, Optional.<ParserCtx>empty());
+        List<Address> addresses = parser.extractAddressesFromFile(downloadCtx.getDownloadFile(), company, Optional.<ParserCtx>empty());
         Assert.assertEquals(1, addresses.size());
-//        Assert.assertTrue("Address extracted from html content should be only one", addresses.size() == 1);
+        Assert.assertEquals("Wallstraße 58 10179 Berlin", addresses.get(0).getValue());
 
         downloadCtx.cleanUp();
         Assert.assertTrue("File exists", !downloadCtx.getDownloadFile().exists());
@@ -135,8 +137,10 @@ public class DefaultParserTest {
 
         Company company = new Company(companyUrl, Optional.of("Savage Wear"), false);
 
-        Set<Address> addresses = parser.extractAddressesFromFile(downloadCtx.getDownloadFile(), company, Optional.<ParserCtx>empty());
-        Assert.assertTrue("Address extracted from html content should be two", addresses.size() == 2);
+        List<Address> addresses = parser.extractAddressesFromFile(downloadCtx.getDownloadFile(), company, Optional.<ParserCtx>empty());
+        Assert.assertEquals(2, addresses.size());
+        Assert.assertEquals("Gubener Straße 29 10243 Berlin", addresses.get(0).getValue());
+        Assert.assertEquals("Grünberger Straße 16 10243 berlin", addresses.get(1).getValue());
 
         downloadCtx.cleanUp();
         Assert.assertTrue("File exists", !downloadCtx.getDownloadFile().exists());
@@ -162,8 +166,8 @@ public class DefaultParserTest {
 
         Company company = new Company(companyUrl, Optional.of("Power Flasher"), false);
 
-        Set<Address> addresses = parser.extractAddressesFromFile(downloadCtx.getDownloadFile(), company, Optional.<ParserCtx>empty());
-        Assert.assertTrue("Address extracted from html content should be one", addresses.size() == 1);
+        List<Address> addresses = parser.extractAddressesFromFile(downloadCtx.getDownloadFile(), company, Optional.<ParserCtx>empty());
+        Assert.assertEquals(1, addresses.size());
 
         downloadCtx.cleanUp();
         Assert.assertTrue("File exists", !downloadCtx.getDownloadFile().exists());

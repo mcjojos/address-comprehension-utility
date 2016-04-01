@@ -96,7 +96,6 @@ public class Util {
     public static String getTodaysDate() {
         Date date = new Date();
         SimpleDateFormat sdf = new SimpleDateFormat("YYYYMMdd-HHmmss");
-        System.out.println();
         return sdf.format(date);
     }
 

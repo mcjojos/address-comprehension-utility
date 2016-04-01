@@ -4,6 +4,7 @@
 
 package com.jojos.home.addresscomprehension.parse;
 
+import com.jojos.home.addresscomprehension.util.Util;
 import com.jojos.home.addresscomprehension.values.Address;
 import com.jojos.home.addresscomprehension.values.Company;
 import org.jsoup.Jsoup;
@@ -43,13 +44,13 @@ public class DefaultParser implements Parser {
     private final Pattern pattern;
 
     public DefaultParser() {
-        pattern = Pattern.compile(".*(.*(?:strasse|straße).*(?:Deutschland|\\d{5}\\s+\\w))(.*)", Pattern.CASE_INSENSITIVE);
+        pattern = Pattern.compile(".*(\\b\\p{L}+\\s?(?:[Ss]traße|[Ss]trasse)\\b.*(?:Deutschland|berlin))(.*)", Pattern.CASE_INSENSITIVE);
     }
     @Override
-    public Set<Address> extractAddressesFromString(String page, Company company, Optional<ParserCtx> parserCtx) {
+    public List<Address> extractAddressesFromString(String page, Company company, Optional<ParserCtx> parserCtx) {
         log.info("Parsing {}", company.getUrlStr());
         page = normalize(page);
-        Set<Address> addresses = new HashSet<>();
+        List<Address> addresses = new ArrayList<>();
         List<String> values = new ArrayList<>();
 
         String remaining = page;
@@ -75,13 +76,14 @@ public class DefaultParser implements Parser {
             }
         }
 
+        log.info("Company {} Parsed addresses {}", company.getUrlStr(), Util.toString(addresses, Address::getValue));
         return addresses;
     }
 
     @Override
-    public Set<Address> extractAddressesFromFile(File file, Company company, Optional<ParserCtx> parserCtx)
+    public List<Address> extractAddressesFromFile(File file, Company company, Optional<ParserCtx> parserCtx)
             throws IOException {
-        Set<Address> addresses = new HashSet<>();
+        List<Address> addresses = new ArrayList<>();
         List<String> values = new ArrayList<>();
 
         Document document = Jsoup.parse(file, "UTF-8");
@@ -89,7 +91,7 @@ public class DefaultParser implements Parser {
 
         for (Element element : elements) {
             String remaining = element.text();
-            System.out.println(remaining);
+//            System.out.println(remaining);
 
             while (remaining != null && !remaining.isEmpty()) {
                 CurrentMatchAndRemainingStr curAndRemain = matchStr(remaining);
@@ -114,6 +116,7 @@ public class DefaultParser implements Parser {
             }
         }
 
+        log.info("Company {} Parsed addresses {}", company.getUrlStr(), Util.toString(addresses, Address::getValue));
         return addresses;
     }
 

@@ -4,8 +4,6 @@
 
 package com.jojos.home.addresscomprehension.download;
 
-import java.net.URL;
-
 /**
  * As the name suggests this class defines the interface to download content over the internet.
  * <p>

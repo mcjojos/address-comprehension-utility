@@ -31,7 +31,6 @@ public class DefaultDownloader implements Downloader<DefaultDownloaderCtx, Downl
     @Override
     public DownloadResult download(DefaultDownloaderCtx context) {
         URL url = context.getUrl();
-        log.info("Attempt to download '{}'", url);
 
         // start optimistically
         boolean success = true;
@@ -39,10 +38,11 @@ public class DefaultDownloader implements Downloader<DefaultDownloaderCtx, Downl
         String errorMessage = "";
 
         InputStream in = null;
+
         try {
             in = url.openStream();
 
-            content = IOUtils.toString(in);
+            content = IOUtils.toString(in, "UTF-8");
             FileUtils.writeStringToFile(
                     context.getDownloadFile(),
                     content,
@@ -50,7 +50,6 @@ public class DefaultDownloader implements Downloader<DefaultDownloaderCtx, Downl
                     false);
 
         } catch (IOException e) {
-            log.error("Failed to download '{}'", url);
             success = false;
             errorMessage = e.getMessage();
         } finally {
@@ -58,8 +57,10 @@ public class DefaultDownloader implements Downloader<DefaultDownloaderCtx, Downl
         }
 
         if (success) {
+            log.info("download of '{}' successful", url);
             return DownloadResult.success(content);
         } else {
+            log.info("download of '{}' failed", url);
             return DownloadResult.fail(errorMessage);
         }
 
