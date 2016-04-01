@@ -48,5 +48,5 @@ A short explanation regarding the properties
 
 ## License
 
-The address comperehension tool is made available under the terms of the Berkeley Software Distribution (BSD) license. This allow you complete freedom to use and distribute the code in source and/or binary form as long as you respect the original copyright.
+The address comprehension tool is made available under the terms of the Berkeley Software Distribution (BSD) license. This allow you complete freedom to use and distribute the code in source and/or binary form as long as you respect the original copyright.
 Please see the LICENCE file for exact terms.

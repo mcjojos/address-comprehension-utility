@@ -22,7 +22,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.sql.SQLException;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -53,6 +52,7 @@ public class SchedulerTask implements Runnable {
 
     @Override
     public void run() {
+        log.info("running for {} ", company);
         DefaultDownloaderCtx downloaderCtx = null;
         try {
             // todo: perhaps implement a way to register a downloader to a specific company
@@ -72,13 +72,12 @@ public class SchedulerTask implements Runnable {
 
                         if (addresses != null && !addresses.isEmpty()) {
                             try {
-                                // the underlying code will make sure that we make an update only if it's necessary
-                                database.insertCompanies(Collections.singleton(company));
-
-                                // insert the addresses
-                                database.insertAddresses(addresses);
-
-                                email.dispatch(addresses);
+                                // insert the addresses. the underlying code will make sure that the companies are also updated if needed
+                                if (database.insertAddresses(addresses)) {
+                                    email.dispatch(addresses);
+                                } else {
+                                    log.info("No address update was necessary for " + Util.toString(addresses, Address::getValue));
+                                }
                             } catch (SQLException | ApplicationException | MalformedURLException e) {
                                 log.error("Cannot save {} in the database.", Util.toString(addresses, Address::toString));
                                 e.printStackTrace();
@@ -95,10 +94,18 @@ public class SchedulerTask implements Runnable {
                         company.toString(), downloadResult.getErrorMessage());
             }
 
+        } catch (Exception e) {
+            //our last resort exception catch
+            log.error("something fucked up");
+            e.printStackTrace();
         } finally {
             if (downloaderCtx != null && !company.isRetainDownloadData()) {
                 downloaderCtx.cleanUp();
             }
         }
+    }
+
+    public Company getCompany() {
+        return company;
     }
 }

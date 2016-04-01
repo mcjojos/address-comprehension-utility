@@ -19,8 +19,10 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -84,7 +86,8 @@ public class DefaultParser implements Parser {
     public List<Address> extractAddressesFromFile(File file, Company company, Optional<ParserCtx> parserCtx)
             throws IOException {
         List<Address> addresses = new ArrayList<>();
-        List<String> values = new ArrayList<>();
+        Map<Integer, String> values = new HashMap<>();
+        int ordinal = 1;
 
         Document document = Jsoup.parse(file, "UTF-8");
         Elements elements = document.select("p");
@@ -96,7 +99,7 @@ public class DefaultParser implements Parser {
             while (remaining != null && !remaining.isEmpty()) {
                 CurrentMatchAndRemainingStr curAndRemain = matchStr(remaining);
                 if (curAndRemain.isMatched) {
-                    values.add(curAndRemain.current);
+                    values.put(ordinal++, curAndRemain.current);
                 }
                 remaining = curAndRemain.remaining;
             }
@@ -110,8 +113,8 @@ public class DefaultParser implements Parser {
                 company = company.cloneWith(values.size());
             }
             LocalDateTime dateTime = LocalDateTime.now();
-            for (int i = 0; i < values.size(); i++) {
-                Address address = new Address(values.get(i), dateTime, company);
+            for (Map.Entry<Integer, String> entry : values.entrySet()) {
+                Address address = new Address(entry.getValue(), dateTime, company, entry.getKey());
                 addresses.add(address);
             }
         }

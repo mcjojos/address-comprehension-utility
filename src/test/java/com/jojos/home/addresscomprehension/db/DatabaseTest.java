@@ -19,12 +19,14 @@ import java.net.MalformedURLException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.jojos.home.addresscomprehension.db.DatabaseTestHelper.CompaniesAndAddresses;
 
 /**
  * Test class for Database class
+ * In this unit test order matters!
  * The order in which the tests are executed are important, ie the companies must be created before the addresses.
  * The pattern followed is test1XXX, test2XXX, etc
  * Created by karanikasg@gmail.com.
@@ -36,7 +38,7 @@ public class DatabaseTest {
     private static Database database;
 
     @BeforeClass
-    public static void setUp() throws Exception {
+    public static void setUp() throws ApplicationException, SQLException, MalformedURLException {
         // ensure we start with a clean database
         Database.deleteDirectory(new File(dbName));
 
@@ -65,10 +67,14 @@ public class DatabaseTest {
         try {
             database.insertAddresses(addresses);
             Map<Integer, Address> retrievedAddresses = database.retrieveLatestAddresses();
+            Set<String> retrievedAddressesValues = retrievedAddresses.values().stream().map(Address::getValue).collect(Collectors.toSet());
+            Set<String> addressesValues = addresses.stream().map(Address::getValue).collect(Collectors.toSet());
             String retrievedAddressesStr = retrievedAddresses.values().stream().map(Address::toString).collect(Collectors.joining("--"));
             String addressesStr = addresses.stream().map(Address::toString).collect(Collectors.joining("--"));
-            Assert.assertTrue("Addresses stored and addresses retrieved should match. Retrieved: " + retrievedAddressesStr + ", addresses: " + addressesStr,
-                    retrievedAddresses.values().containsAll(addresses));
+            Assert.assertTrue("Addresses stored and addresses retrieved should match. \n\n" +
+                            "Retrieved: " + retrievedAddressesStr + ", \n\n" +
+                            "addresses: " + addressesStr,
+                    retrievedAddressesValues.containsAll(addressesValues));
             Assert.assertTrue("Addresses count should be 6", retrievedAddresses.size() == 6);
         } catch (SQLException e) {
             Assert.fail(String.format("Unexpected SQL exception. Error code %d, sql state '%s', message '%s'",
@@ -89,9 +95,9 @@ public class DatabaseTest {
             Map<Integer, Company> retrievedCompanies = database.retrieveCompanies();
             String retrievedCompaniesStr = retrievedCompanies.values().stream().map(Company::toString).collect(Collectors.joining("--"));
             String companiesStr = companies.stream().map(Company::toString).collect(Collectors.joining("--"));
+            Assert.assertTrue("Companies count should be 4", retrievedCompanies.size() == 4);
             Assert.assertTrue("Companies stored and companies retrieved should match. Retrieved: " + retrievedCompaniesStr + ", companies: " + companiesStr,
                     retrievedCompanies.values().containsAll(companies));
-            Assert.assertTrue("Companies count should be 4", retrievedCompanies.size() == 4);
         } catch (SQLException e) {
             Assert.fail(String.format("Unexpected SQL exception. Error code %d, sql state '%s', message '%s'",
                     e.getErrorCode(), e.getSQLState(), e.getMessage()));
@@ -100,11 +106,15 @@ public class DatabaseTest {
         try {
             database.insertAddresses(addresses);
             Map<Integer, Address> retrievedAddresses = database.retrieveLatestAddresses();
+            Set<String> retrievedAddressesValues = retrievedAddresses.values().stream().map(Address::getValue).collect(Collectors.toSet());
+            Set<String> addressesValues = addresses.stream().map(Address::getValue).collect(Collectors.toSet());
             String retrievedAddressesStr = retrievedAddresses.values().stream().map(Address::toString).collect(Collectors.joining("--"));
             String addressesStr = addresses.stream().map(Address::toString).collect(Collectors.joining("--"));
-            Assert.assertTrue("Addresses stored and addresses retrieved should match. Retrieved: " + retrievedAddressesStr + ", addresses: " + addressesStr,
-                    retrievedAddresses.values().containsAll(addresses));
             Assert.assertTrue("Addresses count should be 4", retrievedAddresses.size() == 4);
+            Assert.assertTrue("Addresses stored and addresses retrieved should match. \n\n" +
+                            "Retrieved: " + retrievedAddressesStr + ", \n\n" +
+                            "addresses: " + addressesStr,
+                    retrievedAddressesValues.containsAll(addressesValues));
         } catch (SQLException e) {
             Assert.fail(String.format("Unexpected SQL exception. Error code %d, sql state '%s', message '%s'",
                     e.getErrorCode(), e.getSQLState(), e.getMessage()));

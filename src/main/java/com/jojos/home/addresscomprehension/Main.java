@@ -61,11 +61,6 @@ public class Main {
         final long applicationStart = System.currentTimeMillis();
         log.info("starting application");
 
-//        System.setProperty("file.encoding","UTF-8");
-//        Field charset = Charset.class.getDeclaredField("defaultCharset");
-//        charset.setAccessible(true);
-//        charset.set(null, null);
-
         // instantiate the database
         String dbName = getProperty("db.name");
         this.database = new Database(dbName);

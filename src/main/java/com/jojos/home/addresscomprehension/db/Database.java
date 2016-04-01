@@ -22,6 +22,7 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -41,8 +42,9 @@ public class Database {
     private final String dbShutDownURL;
 
     private final Map<Integer, Company> cachedCompanies = new HashMap<>();
+    private final Map<Integer, Address> cachedAddresses = new HashMap<>();
 
-    public Database(String dbName) throws SQLException, MalformedURLException {
+    public Database(String dbName) throws SQLException, MalformedURLException, ApplicationException {
         this.dbName = dbName;
         String connectionURL = DERBY_URL_PREFIX + dbName + ";create=true";
 
@@ -57,6 +59,7 @@ public class Database {
         // then cache the companies. It's ok to do that for now.
         // If that becomes a problem over time rethink the implementation.
         populateCompanies();
+        populateAddresses();
     }
 
     /**
@@ -113,8 +116,8 @@ public class Database {
                     statement.setInt(4, id.get());
                     statement.execute();
 
-                    log.info("Updating company {}", company.toString());
-                    // fetch the auto-increment value we just created
+                    log.info("Updating  {}", company.toString());
+
                     cacheCompany(id.get(), company);
                 }
             }
@@ -192,7 +195,7 @@ public class Database {
                 // extra validation step which normally shouldn't be required
                 if (company.isPresent()) {
                     if (ordinal > company.get().getAddressCount()) {
-                        String errorMsg = "Can't possibly define an address ordinal with a value bigger than it's company's address_count";
+                        String errorMsg = "Can't  possibly define an address ordinal with a value bigger than it's company's address_count";
                         log.error(errorMsg);
                         throw new ApplicationException(errorMsg);
                     }
@@ -245,7 +248,7 @@ public class Database {
     }
 
     /**
-     * Search for a company in the collection of cached companies that contain a company with the same url and name
+     * Search for a company in the collection of cached companies that contains a company with the same url and name
      * but differ only on their AddressCount. Used to signify an update.
      * @param company the object to compare against
      * @return An optional int that points to the correct company id that actually is non empty if there is
@@ -279,6 +282,41 @@ public class Database {
         return companyId;
     }
 
+    /**
+     * Search for an address in the collection of cached addresses that contains an address with the same value
+     * but differ on their timestamp. Used to signify an update.
+     * @param address the object to compare against
+     * @return An optional int that points to the correct address id that actually is non empty if there is
+     * at least one entry with the same value AND different timestamp
+     * (signifying an update operation). It will return an {@link Optional#empty()} otherwise.
+     */
+    private Optional<Integer> getIdForAddress(Address address)
+            throws SQLException, MalformedURLException {
+        Optional<Integer> addressId = Optional.empty();
+
+        // first check the cached companies
+        for (HashMap.Entry<Integer, Address> entry : cachedAddresses.entrySet()) {
+            if (entry.getValue().getValue().equals(address.getValue())) {
+                addressId = Optional.of(entry.getKey());
+            }
+        }
+
+        // only in case we haven't found locally the address id then search in the database
+        if (!addressId.isPresent()) {
+            try {
+                Map<Integer, Address> retrievedAddresses = retrieveAddresses();
+                for (Map.Entry<Integer, Address> entry : retrievedAddresses.entrySet()) {
+                    if (entry.getValue().getValue().equals(address.getValue())) {
+                        addressId = Optional.of(entry.getKey());
+                    }
+                }
+            } catch (ApplicationException e) {
+                log.info("no addressed retrieved");
+            }
+        }
+        return addressId;
+    }
+
     private Optional<Integer> getIdForCompany(Company company) throws SQLException, MalformedURLException {
         Optional<Integer> companyId = Optional.empty();
 
@@ -302,20 +340,30 @@ public class Database {
     }
 
     /**
-     * When we insert an address several things happen.
-     * 1. Check if the address already exists in cache.
+     * Always insert a new record for an address keep old records.
+     * Our select statement makes sure we fetch the right ones each time.
+     * This method MUST be synchronized as it's accessed from different threads.
      * @param addresses a collection of addresses
+     * @return true if at least one address was updated, false otherwise
      * @throws SQLException
      * @throws ApplicationException
      */
-    public void insertAddresses(Collection<Address> addresses)
+    public synchronized boolean insertAddresses(Collection<Address> addresses)
             throws SQLException, ApplicationException, MalformedURLException {
+        boolean inserted = false;
         for (Address address : addresses) {
             Optional<Integer> companyId = getIdForCompany(address.getCompany());
-            // no point to continue if there is no company stored for this address
+
+            // update/insert the company in case not found
             if (!companyId.isPresent()) {
-                log.error("No company found for address {}", address.toString());
-                continue;
+                log.info("Updating the company for address {}", address.toString());
+                insertCompanies(Collections.singleton(address.getCompany()));
+
+                companyId = getIdForCompany(address.getCompany());
+                if (!companyId.isPresent()) {
+                    log.error("No companies found for {}" + address.toString());
+                    continue;
+                }
             }
 
             // if there is a company make a sanity check in regards to the ordinal-address count relation
@@ -325,16 +373,30 @@ public class Database {
                 throw new ApplicationException(errorMsg);
             }
 
-            PreparedStatement statement = dbConnection.prepareStatement(
-                    "INSERT INTO ADDRESSES (ADDRESS, IMPORT_TIMESTAMP, COMPANY_ID, ORDINAL) VALUES (?, ?, ?, ?)");
-            statement.closeOnCompletion();
-            statement.setString(1, address.getValue());
-            statement.setTimestamp(2, Timestamp.valueOf(address.getDateTime()));
-            statement.setInt(3, companyId.get());
-            statement.setInt(4, address.getOrdinal());
+            if (!getIdForAddress(address).isPresent()) {
+                PreparedStatement statement = dbConnection.prepareStatement(
+                        "INSERT INTO ADDRESSES (ADDRESS, IMPORT_TIMESTAMP, COMPANY_ID, ORDINAL) VALUES (?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
+                statement.closeOnCompletion();
+                statement.setString(1, address.getValue());
+                statement.setTimestamp(2, Timestamp.valueOf(address.getDateTime()));
+                statement.setInt(3, companyId.get());
+                statement.setInt(4, address.getOrdinal());
+                statement.execute();
 
-            statement.execute();
+                inserted = true;
+                log.info("Inserting {}", address.toString());
+                // fetch the auto-increment value we just created
+                try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        int id = generatedKeys.getInt(1);
+                        cacheAddress(id, address);
+                    } else {
+                        throw new SQLException("Expected generated keys after inserting an address but got none");
+                    }
+                }
+            }
         }
+        return inserted;
     }
 
     private void createTablesIfNotExist() throws SQLException {
@@ -400,8 +462,17 @@ public class Database {
         companiesStored.forEach(this::cacheCompany);
     }
 
+    private void populateAddresses() throws SQLException, ApplicationException, MalformedURLException {
+        Map<Integer, Address> addressesStored = retrieveLatestAddresses();
+        addressesStored.forEach(this::cacheAddress);
+    }
+
     private void cacheCompany(Integer id, Company company) {
         cachedCompanies.put(id, company);
+    }
+
+    private void cacheAddress(Integer id, Address address) {
+        cachedAddresses.put(id, address);
     }
 
     public final void shutdown() {

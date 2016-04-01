@@ -34,8 +34,6 @@ public class DatabaseTestHelper {
         addresses.add(new Address("Gubener Straße 29 10243 Berlin", LocalDateTime.now(), companies.get(1), 1));
         addresses.add(new Address("Grünberger Straße 16 10243 berlin", LocalDateTime.now(), companies.get(1), 2));
         addresses.add(new Address("Ritterstraße 11 10969 Berlin, Deutschland", LocalDateTime.now(), companies.get(2)));
-
-        // add one company without a name
         addresses.add(new Address("An der Alster 47, D-20099 Hamburg", LocalDateTime.now(), companies.get(3), 1));
         addresses.add(new Address("Rua Jose Getulio, 579, CJ 55/56, Aclimacao CEP 01509-001, Sao Paolo - SP - Brasil",
                 LocalDateTime.now(), companies.get(3), 2));
@@ -56,8 +54,6 @@ public class DatabaseTestHelper {
         addresses.add(new Address("Wallstraße 58 10179 Berlin", LocalDateTime.now(), companies.get(0)));
         addresses.add(new Address("Gubener Straße 29 10243 Berlin", LocalDateTime.now(), companies.get(1), 1));
         addresses.add(new Address("Ritterstraße 11 10969 Berlin, Deutschland", LocalDateTime.now(), companies.get(2)));
-
-        // add one company without a name
         addresses.add(new Address("An der Alster 47, D-20099 Hamburg", LocalDateTime.now(), companies.get(3), 1));
 
         return new CompaniesAndAddresses(companies, addresses);
